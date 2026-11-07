@@ -201,7 +201,12 @@ end
 RunService:BindToRenderStep("JumpTrigger", Enum.RenderPriority.Last.Value + 1, function(dt)
     if not Settings.Enabled then return end
 
-    local holding = isDown(Settings.HoldKey) -- hawak ba ang right click (para sa pagbaril)
+    -- lahat (focus, aimlock, pagbaril) ay gumagana LANG habang hawak ang right click
+    local holding = isDown(Settings.HoldKey)
+    if not holding then
+        focusPlayer = nil
+        return
+    end
     local cam = workspace.CurrentCamera
 
     -- 1) i-check kung valid pa ang focus player
@@ -229,9 +234,8 @@ RunService:BindToRenderStep("JumpTrigger", Enum.RenderPriority.Last.Value + 1, f
     if not focusPlayer then return end
 
     -- 3) para LANG sa focus player
-    --    tumatalon: kusang aimlock (hindi kailangang hawakan ang right click),
-    --               at babarilin lang kung hawak ang right click
-    --    hindi tumatalon: walang aimlock, normal na trigger lang kapag hawak ang right click
+    --    tumatalon: aimlock at agad na babaril
+    --    hindi tumatalon: walang aimlock, normal na trigger lang
     local d, part, root, hum, char = evaluate(cam, focusPlayer, Settings.FocusFOV * Settings.FocusKeep)
     if not d then return end
 
