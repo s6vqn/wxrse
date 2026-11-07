@@ -6,10 +6,9 @@ local LocalPlayer = Players.LocalPlayer
 local Settings = {
     Enabled = false,                         -- nagsisimula na naka-OFF
     ToggleKey = Enum.KeyCode.T,              -- pindutin para ON/OFF
-    RequireHold = false,                     -- true = kailangan ding hawakan ang HoldKey
-    HoldKey = Enum.UserInputType.MouseButton2,
+    HoldKey = Enum.UserInputType.MouseButton2, -- hawakan para mag auto shoot
 
-    TrigSpeed = 60,        -- clicks bawat segundo (1-200)
+    TrigSpeed = 100,       -- clicks bawat segundo (1-200), napakabilis
     MaxDistance = 300,     -- studs
     WallCheck = true,      -- may sariling ray bawat player
     HeadOnly = false,      -- true = ulo lang ang binabaril kapag hindi tumatalon
@@ -201,11 +200,8 @@ end
 
 RunService:BindToRenderStep("JumpTrigger", Enum.RenderPriority.Last.Value + 1, function(dt)
     if not Settings.Enabled then return end
-    if Settings.RequireHold and not isDown(Settings.HoldKey) then
-        focusPlayer = nil
-        return
-    end
 
+    local holding = isDown(Settings.HoldKey) -- hawak ba ang right click (para sa pagbaril)
     local cam = workspace.CurrentCamera
 
     -- 1) i-check kung valid pa ang focus player
@@ -232,7 +228,10 @@ RunService:BindToRenderStep("JumpTrigger", Enum.RenderPriority.Last.Value + 1, f
 
     if not focusPlayer then return end
 
-    -- 3) para LANG sa focus player: lock at shoot kapag tumalon, trigger kapag nasa crosshair
+    -- 3) para LANG sa focus player
+    --    tumatalon: kusang aimlock (hindi kailangang hawakan ang right click),
+    --               at babarilin lang kung hawak ang right click
+    --    hindi tumatalon: walang aimlock, normal na trigger lang kapag hawak ang right click
     local d, part, root, hum, char = evaluate(cam, focusPlayer, Settings.FocusFOV * Settings.FocusKeep)
     if not d then return end
 
@@ -243,11 +242,11 @@ RunService:BindToRenderStep("JumpTrigger", Enum.RenderPriority.Last.Value + 1, f
         local alpha = 1 - math.exp(-Settings.LockSpeed * dt)
         cam.CFrame = cam.CFrame:Lerp(CFrame.lookAt(cam.CFrame.Position, target), alpha)
         local sd = screenDist(cam, target)
-        log("JUMP LOCK", focusPlayer.Name, sd and math.floor(sd) or "off-screen")
-        if sd and sd <= Settings.FireRadius then
+        log("JUMP LOCK", focusPlayer.Name, sd and math.floor(sd) or "off-screen", holding and "(shooting)" or "(no hold)")
+        if holding and sd and sd <= Settings.FireRadius then
             fire = true
         end
-    elseif crosshairOnFocus(cam, char) then
+    elseif holding and crosshairOnFocus(cam, char) then
         fire = true
     end
 
